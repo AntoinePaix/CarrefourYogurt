@@ -16,14 +16,16 @@ import time
 import random
 import datetime
 
-category = 'yaourts'
+
 websites = ['http://www.jeuxvideo.com', 'https://www.amazon.fr', 'https://www.youtube.com', 'https://www.lemonde.fr', ]
 headers = {"user-agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) AppleWebKit/536.30.1 (KHTML, like Gecko) Version/6.0.5 Safari/536.30.1", "referer": random.choice(websites)}
 session = requests.Session()
+link = "https://www.carrefour.fr/r/cremerie/yaourts-desserts-et-specialites-vegetales"
+category = link.split('/')[-1]
 
-def getTotalPages():
+def getTotalPages(lien):
     """Retourne le nombre de pages à générer en fonction du nombre de résultats"""
-    url = "https://www.carrefour.fr/r/cremerie/yaourts-desserts-et-specialites-vegetales"
+    url = lien
     response = requests.get(url, headers=headers)
     soup = BeautifulSoup(response.text, 'html.parser')
     total = int(soup.find('div', class_='product-listing-page__top-wrapper').find('h5').text.strip().split()[0])
@@ -32,10 +34,10 @@ def getTotalPages():
     else:
         return total // 60 + 2
 
-def generateProductsUrls():
-    for i in range(1, getTotalPages()):
+def generateProductsUrls(lien):
+    for i in range(1, getTotalPages(link)):
         time.sleep(random.random())
-        url = 'https://www.carrefour.fr/r/cremerie/yaourts-desserts-et-specialites-vegetales?noRedirect=1&page=' + str(i)
+        url = lien + '?noRedirect=1&page=' + str(i)
 
         response = session.get(url, headers=headers)
         soup = BeautifulSoup(response.text, "html.parser")
@@ -86,17 +88,21 @@ def Filename():
 if __name__ == "__main__":
 
     # on génère toutes les urls et on les place dans une liste
-    liste_urls_produits = list(generateProductsUrls())
+    liste_urls_produits = []
+    for lien in generateProductsUrls(link):
+        liste_urls_produits.append(lien)
+        print(lien, 'ajouté dans la liste')
 
     # on retire le poulet qui est dans la catégorie "Yaourts, desserts et spécialités végétales". Allez comprendre...
     for url in liste_urls_produits:
         if 'poulet-roti-certifie' in url:
             liste_urls_produits.remove(url)
     
+
+    # on parse toutes les pages et on ajoute les dictionnaires dans une liste
     datas = []
     compteur = 0
 
-    # on parse toutes les pages et on ajoute les dictionnaires une liste
     for url in liste_urls_produits:
         row = parsingProduct(url)
         compteur += 1
